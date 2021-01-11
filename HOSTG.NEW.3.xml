@@ -20,7 +20,7 @@
       <row>
          <platform>WINDOWS</platform>
          <max_parallel>9999</max_parallel>
-         <mode>A</mode>
+         <mode>X</mode>
       </row>
    </agent_group_attributes>
 </hostg>
