@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scri>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <ert>1</ert>
+         <last_runtimes>AQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>SCRI.NEW.1</name>
+         <type>SCRI</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>602776302</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[!:  set &task#              = 'QA.FILEEVNT.U.CLEARING.CFB.CGM_01_FIXML_399'
+!:  set &currentrunid#  = get_statistic_detail(,runid,&task#)
+!:    PRINT "Initial status of &task# ( &currentrunid# ) - &currentrunid#"
+!:    WHILE &currentrunid# <> ''
+!!:     SET &STATUS_CODE# = GET_UC_OBJECT_STATUS(&currentrunid#)
+!!:     PRINT "Initial status of &task ( &currentrunid# ) - &STATUS_CODE#"
+!!:       SET &KILL#         = CANCEL_UC_OBJECT(&RUNID#, ENDED_TIMEOUT)
+!!:       SET &DEACT#        = DEACTIVATE_UC_OBJECT(&RUNID#, FORCED)
+!!:       SET &STATUS_CODE2# = GET_UC_OBJECT_STATUS(&RUNID#)
+!!:       PRINT "Post kill attempt, status of &OBJECT# ( &RUNID# ) - &STATUS_CODE2# ( kill attempt returned : &KILL# )"
+!!:  ENDWHILE
+!:  set &retcode#         = cancel_uc_object(&currentrunid#,,)
+!:    PRINT "Initial status of &task# ( &returncode# ) - &returncode#"
+
+
+
+
+
+
+:  SET &OBJECT#       = 'QA.FILEEVNT.U.CLEARING.CFB.CGM_01_FIXML_399'
+:  SET &RUNID#        = GET_UC_OBJECT_NR (&OBJECT#)
+:  PRINT &RUNID#
+:  SET &STATUS_CODE# = GET_UC_OBJECT_STATUS(&RUNID#)
+:     PRINT "Initial status of &OBJECT# ( &RUNID# ) - &STATUS_CODE#"
+:       SET &KILL#         = CANCEL_UC_OBJECT(&RUNID#, ENDED_TIMEOUT)
+:       SET &DEACT#        = DEACTIVATE_UC_OBJECT(&RUNID#, FORCED)
+:       SET &STATUS_CODE2# = GET_UC_OBJECT_STATUS(&RUNID#)
+:       PRINT "Post kill attempt, status of &OBJECT# ( &RUNID# ) - &STATUS_CODE2# ( kill attempt returned : &KILL# )"
+!:  WHILE &RUNID# <> ''
+!:     SET &STATUS_CODE# = GET_UC_OBJECT_STATUS(&RUNID#)
+!:     PRINT "Initial status of &OBJECT# ( &RUNID# ) - &STATUS_CODE#"
+!:       SET &KILL#         = CANCEL_UC_OBJECT(&RUNID#, ENDED_TIMEOUT)
+!:       SET &DEACT#        = DEACTIVATE_UC_OBJECT(&RUNID#, FORCED)
+!:       SET &STATUS_CODE2# = GET_UC_OBJECT_STATUS(&RUNID#)
+!:       PRINT "Post kill attempt, status of &OBJECT# ( &RUNID# ) - &STATUS_CODE2# ( kill attempt returned : &KILL# )"
+!:  ENDWHILE]]></process>
+      </row>
+   </scripts>
+   <script_attributes>
+      <row>
+      </row>
+   </script_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</scri>

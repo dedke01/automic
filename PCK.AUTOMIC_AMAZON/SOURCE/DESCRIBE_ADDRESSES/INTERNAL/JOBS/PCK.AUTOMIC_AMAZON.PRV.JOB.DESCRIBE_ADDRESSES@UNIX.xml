@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_AMAZON.PRV.JOB.DESCRIBE_ADDRESSES@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>-1395855367</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@UNIX
+
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+:SET &UC4RB_ADDRESS_PARAM# = ''
+:IF &UC4RB_AWS_PUB_IP# <> ""
+:  SET &UC4RB_ADDRESS_PARAM# = &UC4RB_AWS_PUB_IP#
+:ELSE
+:  SET &UC4RB_ADDRESS_PARAM# = &UC4RB_AWS_ALLOC_ID#
+:ENDIF
+
+:SET &UC4RB_ADDRESS_FILTER# = ''
+
+! Check the filter params
+:IF &UC4RB_AWS_DOMAIN# <> ""
+:  IF &UC4RB_AWS_DOMAIN# <> "not specified"
+:    SET &UC4RB_ADDRESS_FILTER# = STR_CAT(&UC4RB_ADDRESS_FILTER#, '--filter "domain=&UC4RB_AWS_DOMAIN#" ')
+:  ENDIF
+:ENDIF
+
+:IF &UC4RB_AWS_INSTANCE_ID# <> ""
+:  SET &UC4RB_ADDRESS_FILTER# = STR_CAT(&UC4RB_ADDRESS_FILTER#, '--filter "instance-id=&UC4RB_AWS_INSTANCE_ID#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_PUB_IP# <> ""
+:  SET &UC4RB_ADDRESS_FILTER# = STR_CAT(&UC4RB_ADDRESS_FILTER#, '--filter "public-ip=&UC4RB_AWS_PUB_IP#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_ALLOC_ID# <> ""
+:  SET &UC4RB_ADDRESS_FILTER# = STR_CAT(&UC4RB_ADDRESS_FILTER#, '--filter "allocation-id=&UC4RB_AWS_ALLOC_ID#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_ASSOC_ID# <> ""
+:  SET &UC4RB_ADDRESS_FILTER# = STR_CAT(&UC4RB_ADDRESS_FILTER#, '--filter "association-id=&UC4RB_AWS_ASSOC_ID#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_NI_ID# <> ""
+:  SET &UC4RB_ADDRESS_FILTER# = STR_CAT(&UC4RB_ADDRESS_FILTER#, '--filter "network-interface-id=&UC4RB_AWS_NI_ID#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_NI_OWNER_ID# <> ""
+:  SET &UC4RB_ADDRESS_FILTER# = STR_CAT(&UC4RB_ADDRESS_FILTER#, '--filter "network-interface-owner-id=&UC4RB_AWS_NI_OWNER_ID#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_PRIV_IP# <> ""
+:  SET &UC4RB_ADDRESS_FILTER# = STR_CAT(&UC4RB_ADDRESS_FILTER#, '--filter "private-ip-address=&UC4RB_AWS_PRIV_IP#" ')
+:ENDIF
+
+echo 'Describing Elastic IP Addresses..'
+
+output=$(java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-describe-addresses &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_ADDRESS_FILTER#)
+
+ret=$?
+if [ "$ret" -gt "0" ]; then
+  echo Failed to describe address
+  exit $ret
+fi
+
+output=$(printf "%s\n" "$output" | grep ^ADDRESS)
+
+if [ -z "$output" ]; then
+  echo No address found!
+else
+  printf "%s\n" "$output"
+fi
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.PREPARE_JOB</pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "ADDRESS*")
+:SET &UC4RB_OUT_ADDRESSES# = ''
+:PROCESS &output_entry#
+:  SET &output_line# = GET_PROCESS_LINE(&output_entry#, 1)
+
+!  Extract the delimiter character from this line, usually the tab character
+:  SET &tab# = STR_CUT(&output_line#, 8, 1)
+:  SET &output_line# = SUBSTR(&output_line#, 9)
+!  Replace the tab character with single space to easier to split
+:  SET &output_line# = STR_SUB(&output_line#, &tab#, " ")
+
+:  DEFINE &results#, string, 7
+:  FILL &results#[] = STR_SPLIT(&output_line#, " ")
+:  SET &address# = &results#[1]
+:  SET &UC4RB_OUT_ADDRESSES# = STR_CAT(&UC4RB_OUT_ADDRESSES#, '&address#,')
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#
+
+:IF &UC4RB_OUT_ADDRESSES# <> ""
+:  SET &len# = STR_LENGTH(&UC4RB_OUT_ADDRESSES#)
+:  SET &len# = &len# - 1
+:  SET &UC4RB_OUT_ADDRESSES# = STR_CUT(&UC4RB_OUT_ADDRESSES#, 1, &len#)
+:  PRINT 'Out addresses = &UC4RB_OUT_ADDRESSES#'
+:  PUBLISH &UC4RB_OUT_ADDRESSES#,, 'WORKFLOW'
+:ELSE
+:  PRINT No output addresses
+:ENDIF
+]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

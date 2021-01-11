@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dash>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>TEST_DASHBOARD_AWA_12_3_2.HTML_RMJXP</name>
+         <type>DASH</type>
+         <versioning_id>-99825166</versioning_id>
+      </row>
+   </general_attributes>
+   <documentation>
+      <row>
+         <DASH>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9InllcyI/Pgo8ZGFzaGJvYXJkIGNvbHM9IjMiIHJvd3M9IjIiIHN0YXRpYz0iZmFsc2UiPgogICAgPHdpZGdldHM+CiAgICAgICAgPGVudHJ5PgogICAgICAgICAgICA8d2lkZ2V0IGlkPSJlY2MuY29tbW9uLmlmcmFtZSI+Jmx0O2NvbmZpZ3VyYXRpb24mZ3Q7Jmx0O3RpdGxlJmd0O3Rlc3QgJmx0Oy90aXRsZSZndDsmbHQ7Y29udGVudFVSTCZndDtodHRwOi8vc3B0NDBkaXctdGhlc291cmNlLnByb2QubmNjaS5jb20vUGFnZXMvRGVmYXVsdC5hc3B4Jmx0Oy9jb250ZW50VVJMJmd0OyZsdDtyZWZyZXNoTW9kZSZndDtNQU5VQUwmbHQ7L3JlZnJlc2hNb2RlJmd0OyZsdDsvY29uZmlndXJhdGlvbiZndDs8L3dpZGdldD4KICAgICAgICAgICAgPGdlb21ldHJ5IGhlaWdodD0iMSIgd2lkdGg9IjEiIHg9IjAiIHk9IjAiLz4KICAgICAgICA8L2VudHJ5PgogICAgPC93aWRnZXRzPgogICAgPGNvbmZpZ3VyYXRpb25zLz4KPC9kYXNoYm9hcmQ+Cg==</DASH>
+      </row>
+   </documentation>
+</dash>

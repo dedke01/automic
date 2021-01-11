@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <ert>9</ert>
+         <ert_trend>4</ert_trend>
+         <platform>SQL</platform>
+         <last_runtimes>CQAAAAMAAAABAAAAGgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>ASPIRE.SHARED.SCHEDULE.GET.JOBS</name>
+         <type>JOBS</type>
+         <has_object_variables>1</has_object_variables>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>Get Recurring and Jsch Jobs from DB</description>
+         <versioning_id>-1066378481</versioning_id>
+      </row>
+   </general_attributes>
+   <documentation>
+      <row>
+         <_Links><![CDATA[<?xml version="1.0" encoding="ISO-8859-15" standalone="no"?>
+<!DOCTYPE Content [
+<!ATTLIST Content wetr CDATA "sgfds" >
+<!ATTLIST Content test2 CDATA "test2" >
+<!ATTLIST Content badbad CDATA "badattributetype" >
+]>
+<Content badbad="badattributetype" test2="test2" wetr="sgfds">thissucks&#13;
+thissuck2&#13;
+this sucks3&#13;
+thissuck4</Content>
+]]></_Links>
+      </row>
+      <row>
+         <Docu>test</Docu>
+      </row>
+   </documentation>
+   <scripts>
+      <row>
+         <process>select top (5) oh_name, oh_client, oh_idnr from oh;</process>
+      </row>
+      <row>
+         <pre_process><![CDATA[!:SET &VALIDATE_VAR# = 1
+!:PUBLISH &VALIDATE_VAR#,VALIDATE_VAR#,"TOP"
+!:DEFINE &RECURRING_SCHEDULES1#, string, 10
+!:DEFINE &JSCH_SCHEDULES1#, string, 10
+!:SET &RECURRING_SCHEDULES1#[1] = "Hello"
+!:PUBLISH &RECURRING_SCHEDULES1#[],RECURRING_SCHEDULES1#,"TOP"
+!:PUBLISH &JSCH_SCHEDULES1#[],JSCH_SCHEDULES1#,"TOP"
+]]></pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[!Program to process the data read from DB
+!Add the data to two arrays and publish
+:DEFINE &RECURRING_SCHEDULES#, string, 5
+:DEFINE &JSCH_SCHEDULES#, string, 5
+:SET &COUNT_R# = 1
+:SET &COUNT_J# = 1
+
+:SET &HND# = PREP_PROCESS_REPORT(,, "REP", "*","COL=DELIMITER","DELIMITER=';'")
+:PROCESS &HND#
+:  SET &ID# = GET_PROCESS_LINE(&HND#,1)
+:  SET &ID#  = STR_TRIM(&ID#)
+:  SET &WF_NAME# = GET_PROCESS_LINE(&HND#,2)
+:  SET &WF_NAME#  = STR_TRIM(&WF_NAME#)
+:  SET &SCHEDULE_TYPE# = GET_PROCESS_LINE(&HND#,3)
+:  SET &SCHEDULE_TYPE#  = STR_TRIM(&SCHEDULE_TYPE#)
+:  PRINT " Record Read = &ID# &WF_NAME#  &SCHEDULE_TYPE# "
+:  IF &SCHEDULE_TYPE# = "RECURRING"
+:      SET &RECURRING_SCHEDULES#[&COUNT_R#] = &WF_NAME#
+:      SET &COUNT_R# = &COUNT_R# + 1
+:  ENDIF
+:  IF &SCHEDULE_TYPE# = "JSCH"
+:      SET &JSCH_SCHEDULES#[&COUNT_J#] = &WF_NAME#
+:      SET &COUNT_J# = &COUNT_J# + 1
+:  ENDIF
+:ENDPROCESS
+
+:SET &COUNT# = 1
+:SET &LENGTH# = LENGTH(&RECURRING_SCHEDULES#[])
+:WHILE &COUNT# <= &LENGTH#
+:  IF &RECURRING_SCHEDULES#[&COUNT#] <> ""
+:    PRINT " RECURRING &COUNT# : &RECURRING_SCHEDULES#[&COUNT#] "
+:  ENDIF
+:  SET &COUNT# = &COUNT# + 1
+:ENDWHILE
+
+:SET &COUNT# = 1
+:SET &LENGTH# = LENGTH(&JSCH_SCHEDULES#[])
+:WHILE &COUNT# <= &LENGTH#
+:  IF &JSCH_SCHEDULES#[&COUNT#] <> ""
+:    PRINT " JSCH &COUNT# : &JSCH_SCHEDULES#[&COUNT#] "
+:  ENDIF
+:  SET &COUNT# = &COUNT# + 1
+:ENDWHILE
+
+!:SET &COUNT2# = 1
+!:SET &LENGTH2# = LENGTH(&JSCH_SCHEDULES#[])
+!:WHILE &COUNT2# <= &LENGTH2#
+!:  IF &JSCH_SCHEDULES#[&COUNT2#] <> ""
+!:    PRINT " JSCH &COUNT2# : &JSCH_SCHEDULES#[&COUNT2#] "
+!:  ENDIF
+!:  SET &COUNT2# = &COUNT2# + 1
+!:ENDWHILE
+
+:PUBLISH &RECURRING_SCHEDULES#[],RECURRING_SCHEDULES#,"TOP"
+:PUBLISH &JSCH_SCHEDULES#[],JSCH_SCHEDULES#,"TOP"
+]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <connection_object>ASPIRE.SHARED.SCHEDULE.PSQL.CONN</connection_object>
+         <platform>SQL</platform>
+         <agent>SQL01</agent>
+         <login>LOGIN.MSSQL.1</login>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <T>MSSQL</T>
+         <database_name></database_name>
+         <server_name></server_name>
+         <sql_column_seperator>;</sql_column_seperator>
+         <sql_captions>1</sql_captions>
+         <sql_show_null>1</sql_show_null>
+         <sql_max_rows>0</sql_max_rows>
+         <sql_max_characters>50</sql_max_characters>
+         <data_source></data_source>
+         <A></A>
+         <sql_subst_character></sql_subst_character>
+         <sql_remove_crlf>1</sql_remove_crlf>
+      </row>
+   </job_attributes>
+   <object_variables>
+      <row>
+         <name>&amp;ID#</name>
+      </row>
+      <row>
+         <name>&amp;SCHEDULE_TYPE#</name>
+      </row>
+      <row>
+         <name>&amp;WF_NAME#</name>
+      </row>
+   </object_variables>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

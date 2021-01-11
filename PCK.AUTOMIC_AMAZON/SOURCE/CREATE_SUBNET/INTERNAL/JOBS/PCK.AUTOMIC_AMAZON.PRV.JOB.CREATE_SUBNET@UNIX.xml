@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_AMAZON.PRV.JOB.CREATE_SUBNET@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>956895803</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@UNIX
+
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+:SET &UC4RB_ZONE_OPTION# = ''
+:IF &UC4RB_AWS_AVAIL_ZONE# <> ""
+:  SET &UC4RB_ZONE_OPTION# = '-z &UC4RB_AWS_AVAIL_ZONE#'
+:ENDIF
+
+echo 'Creating new subnet..'
+
+java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-create-subnet &UC4RB_AWS_COMMON_OPTIONS# -c &UC4RB_AWS_VPC_ID# -i &UC4RB_AWS_IP_BLOCK# &UC4RB_ZONE_OPTION#
+
+ret=$?
+if [ "$ret" -gt "0" ]; then
+  echo Failed to create subnet.
+  exit $ret
+fi
+
+echo Successfully create subnet.
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.PREPARE_JOB</pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "SUBNET*")
+:PROCESS &output_entry#
+:  SET &output_line# = GET_PROCESS_LINE(&output_entry#, 1)
+!  Extract the delimiter character from this output_line, usually the tab character
+:  SET &tab# = STR_CUT(&output_line#, 7, 1)
+:  SET &output_line# = SUBSTR(&output_line#, 8)
+!  Replace all tab characters with single space
+:  SET &output_line# = STR_SUB(&output_line#, &tab#, " ")
+:  DEFINE &results#, string, 6
+:  FILL &results#[] = STR_SPLIT(&output_line#, " ")
+:  SET &UC4RB_OUT_SUBNET_ID# = &results#[1]
+:  SET &UC4RB_OUT_STATE# = &results#[2]
+:  SET &UC4RB_OUT_NUM_IPS# = &results#[5]
+:  SET &UC4RB_OUT_AVAILABILITY_ZONE# = &results#[6]
+
+:  PRINT ID of the new subnet = &UC4RB_OUT_SUBNET_ID#
+:  PRINT The current state of the subnet = &UC4RB_OUT_STATE#
+:  PRINT The number of IP addresses in the subnet that are available = &UC4RB_OUT_NUM_IPS#
+:  PRINT The Availability Zone the subnet is in = &UC4RB_OUT_AVAILABILITY_ZONE#
+
+:  PUBLISH &UC4RB_OUT_SUBNET_ID#, , "WORKFLOW"
+:  PUBLISH &UC4RB_OUT_STATE#, , "WORKFLOW"
+:  PUBLISH &UC4RB_OUT_NUM_IPS#, , "WORKFLOW"
+:  PUBLISH &UC4RB_OUT_AVAILABILITY_ZONE#, , "WORKFLOW"
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobi>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>PCK.CUSTOM_AMAZON_S3.PRV.INCLUDE.PROCESS_INIT</name>
+         <type>JOBI</type>
+         <versioning_id>-629144966</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:switch &$PLATFORM#
+:case "WINDOWS"
+:  set &SETENV#="set"
+echo off
+:case "UNIX"
+:  set &SETENV#="export"
+:endswitch
+
+:include PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:include PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+!Set environment variables
+:if &AWS_ACCESS_KEY_ID# ne ""
+&SETENV# AWS_ACCESS_KEY_ID=&AWS_ACCESS_KEY_ID#
+:endif
+
+:if &AWS_SECRET_ACCESS_KEY# ne ""
+:  set &UC4RB_ENCRYPTED_PASSWORD_TMP# = &AWS_SECRET_ACCESS_KEY#
+:  include PCK.ITPA_SHARED.PRV.INCLUDE.DECRYPT_PASSWORD
+:  switch &$PLATFORM#
+:  case "WINDOWS"
+&SETENV# AWS_SECRET_ACCESS_KEY=%UC4_DECRYPTED_PWD%
+:  case "UNIX"
+&SETENV# AWS_SECRET_ACCESS_KEY=$UC4_DECRYPTED_PWD
+:  endswitch
+:endif
+
+:if &AWS_SESSION_TOKEN# ne ""
+&SETENV# AWS_SESSION_TOKEN=&AWS_SESSION_TOKEN#
+:endif
+
+:if &AWS_DEFAULT_REGION# ne ""
+&SETENV# AWS_DEFAULT_REGION=&AWS_DEFAULT_REGION#
+:endif
+
+:if &AWS_DEFAULT_PROFILE# ne ""
+&SETENV# AWS_DEFAULT_PROFILE=&AWS_DEFAULT_PROFILE#
+:endif
+
+:if &AWS_CONFIG_FILE# ne ""
+&SETENV# AWS_CONFIG_FILE=&AWS_CONFIG_FILE#
+:endif
+
+:set &CLI# = "aws s3"
+
+]]></process>
+      </row>
+   </scripts>
+</jobi>

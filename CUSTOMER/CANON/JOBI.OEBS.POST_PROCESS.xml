@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobi>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>JOBI.OEBS.POST_PROCESS</name>
+         <type>JOBI</type>
+         <versioning_id>-1641743344</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:SET &JOB_RETURN_CODE# = get_uc_object_status(,,'retcode')
+:SET &PROCESS_ID# = GET_STATISTIC_DETAIL(,'PROCESS_ID')
+:SET &PROG_APP_SHORT_NAME# = GET_ATT(appShortName)
+:SET &PROGRAM_DESC# = &$OBJECT_TITLE#
+
+! Check if the job has a valid request_id
+! If not, define the status variables to null
+:IF &PROCESS_ID# <> ""
+:    SET &EBS_STATUS_CODE# = GET_SCRIPT_VAR("STATUS_CODE")
+:ELSE
+:   SET  &EBS_STATUS_CODE# =""
+:   RSET &STATUS_CODE = ""
+:   RSET &APPLICATION_STATUS = ""
+:   RSET &REQUEST_ID = ""
+:ENDIF
+
+
+
+:P EBS_WARN_MODE: &EBS_WARN_MODE#
+:P PROCESS_ID: &PROCESS_ID#
+
+:IF &EBS_STATUS_CODE# = "G"
+:  SWITCH &EBS_WARN_MODE#
+:    CASE CONTINUE
+:          PRINT "Oracle EBS Warning Status - Continuing Job"
+:          MODIFY_STATE STATUS_TEXT=Warning
+:          MODIFY_STATE RETCODE=0
+:          SET &JOB_RETURN_CODE# = 3
+:    CASE WARN
+:          PRINT "Oracle EBS Warning Status - Continuing Job and Notifying"
+:          MODIFY_STATE STATUS_TEXT=Warning
+:          MODIFY_STATE RETCODE=0
+:          SET &JOB_RETURN_CODE# = 4
+:    CASE ABORT
+:         PRINT "Aborting Job"
+:  ENDSWITCH
+:ENDIF
+
+:PRINT Final Job Return Code: &JOB_RETURN_CODE#
+
+:IF &JOB_RETURN_CODE# = 2 OR 4
+!    Check if the request id was set
+!    If there was no request id, then we don't need to set the variables below.
+:     PUBLISH &JOB_RETURN_CODE#,,"TASK"
+:     PUBLISH &PROG_APP_SHORT_NAME#,,"TASK"
+:     PUBLISH &PROGRAM_DESC#,,"TASK"
+:     SET &ACT# = ACTIVATE_UC_OBJECT(CALL.OEBS.ABORT,,,,,PASS_VALUES)
+:ENDIF
+
+:IF &JOB_RETURN_CODE# = 0 OR 3 OR 4
+! Send the report to the email specified on the promptset
+:    IF &EMAIL_REPORT_TO# <> ""
+:      PUBLISH &PROG_APP_SHORT_NAME#,,"TASK"
+:      PUBLISH &PROGRAM_DESC#,,"TASK"
+:      PRINT Emailing report to &EMAIL_REPORT_TO# ...
+:      SET &ACT# = ACTIVATE_UC_OBJECT(CALL.OEBS.REPORT,,,,,PASS_VALUES)
+:    ENDIF
+:ENDIF
+
+
+]]></process>
+      </row>
+   </scripts>
+</jobi>

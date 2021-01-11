@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_AMAZON.PRV.JOB.CREATE_VOLUME@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>-1627394632</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@UNIX
+
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+:SET &UC4RB_CREATE_VOLUME_PARAMS# = ''
+
+:IF &UC4RB_AWS_SNAPSHOT_ID# <> ''
+:  SET &UC4RB_CREATE_VOLUME_PARAMS# = STR_CAT(&UC4RB_CREATE_VOLUME_PARAMS#, '--snapshot &UC4RB_AWS_SNAPSHOT_ID# ')
+:  IF &UC4RB_AWS_VOLUME_SIZE# <> ''
+:    SET &UC4RB_CREATE_VOLUME_PARAMS# = STR_CAT(&UC4RB_CREATE_VOLUME_PARAMS#, '-s &UC4RB_AWS_VOLUME_SIZE# ')
+:  ENDIF
+:ELSE
+:  SET &UC4RB_CREATE_VOLUME_PARAMS# = STR_CAT(&UC4RB_CREATE_VOLUME_PARAMS#, '-s &UC4RB_AWS_VOLUME_SIZE# ')
+:ENDIF
+
+:SET &UC4RB_CREATE_VOLUME_PARAMS# = STR_CAT(&UC4RB_CREATE_VOLUME_PARAMS#, '--availability-zone &UC4RB_AWS_VOLUME_ZONE# ')
+
+:IF &UC4RB_AWS_VOLUME_TYPE# <> ''
+:  SET &UC4RB_CREATE_VOLUME_PARAMS# = STR_CAT(&UC4RB_CREATE_VOLUME_PARAMS#, '--type &UC4RB_AWS_VOLUME_TYPE# ')
+:ENDIF
+
+:IF &UC4RB_AWS_VOLUME_IOPS# <> ''
+:  SET &UC4RB_CREATE_VOLUME_PARAMS# = STR_CAT(&UC4RB_CREATE_VOLUME_PARAMS#, '--iops &UC4RB_AWS_VOLUME_IOPS# ')
+:ENDIF
+
+echo Creating EBS volume..
+
+output=$(java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-create-volume &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_CREATE_VOLUME_PARAMS#)
+
+ret=$?
+echo "$output"
+if [ "$ret" -gt "0" ]; then
+  echo Failed to create EBS volume
+  exit $ret
+fi
+
+result=$(printf "%s\n" "$output" | grep ^VOLUME)
+array=($result)
+volume_id=${array[1]}
+volume_state=${array[4]}
+
+echo "Successfully create volumn $volume_id"
+
+:IF &UC4RB_AWS_IS_AVAILABLE# = 'YES'
+  echo Checking volume status..
+  count=0
+  while [ "$volume_state" != "available" ]
+  do
+    if [ "$count" -eq &UC4RB_AWS_MAX_RETRIES# ]; then
+      echo Volume $volume_id still not avalable after state checking for &UC4RB_AWS_MAX_RETRIES# times
+      exit 1
+    fi
+
+    echo Volume $volume_id is still not available, will re-check after &UC4RB_AWS_RETRY_INTERVAL# seconds..
+    sleep &UC4RB_AWS_RETRY_INTERVAL#
+    output=$(java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-describe-volumes &UC4RB_AWS_COMMON_OPTIONS# $volume_id)
+    ret=$?
+    if [ "$ret" -gt "0" ]; then
+      echo "$output"
+      count=$((count+1))
+      continue
+    fi
+    result=$(printf "%s\n" "$output" | grep ^VOLUME)
+    echo "$result"
+    volume_state=$(printf "%s\n" "$result" | cut -f6)
+    count=$((count+1))
+  done
+  echo "Volume $volume_id is available"
+:ENDIF
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX]]></process>
+      </row>
+      <row>
+         <pre_process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.PREPARE_JOB
+:IF &UC4RB_AWS_SNAPSHOT_ID# = ''
+: IF &UC4RB_AWS_VOLUME_SIZE# = ''
+:   PRINT Invalid input: Volume size is required unless you're creating the volume from a snapshot
+:   EXIT 1
+: ENDIF
+:ENDIF]]></pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "VOLUME*")
+:PROCESS &output_entry#
+:  SET &output_line# = GET_PROCESS_LINE(&output_entry#, 1)
+
+!  Extract the delimiter character from this line, usually the tab character
+:  SET &tab# = STR_CUT(&output_line#, 7, 1)
+:  SET &output_line# = SUBSTR(&output_line#, 8)
+!  Replace the tab character with single space to easier to split
+:  SET &output_line# = STR_SUB(&output_line#, &tab#, " ")
+
+:  DEFINE &results#, string, 6
+:  FILL &results#[] = STR_SPLIT(&output_line#, " ")
+
+:  SET &UC4RB_OUT_VOLUME_ID# = &results#[1]
+:  SET &UC4RB_OUT_VOLUME_STATE# = &results#[4]
+:  TERM_PROCESS
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#
+
+:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "Volume*is available*")
+:PROCESS &output_entry#
+:  SET &UC4RB_OUT_VOLUME_STATE# = 'available'
+:  TERM_PROCESS
+:ENDPROCESS
+
+:PRINT Volume ID: &UC4RB_OUT_VOLUME_ID#
+:PRINT Volume state: &UC4RB_OUT_VOLUME_STATE#
+
+:PUBLISH &UC4RB_OUT_VOLUME_ID#, , "WORKFLOW"
+:PUBLISH &UC4RB_OUT_VOLUME_STATE#, , "WORKFLOW"]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

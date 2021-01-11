@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <ert>3</ert>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>JOBS.HG.HRM_DATA_OPS.CORE_LOADS.STREAM.UNIX.TRUNCATE_TABLES</name>
+         <type>JOBS</type>
+         <has_object_variables>1</has_object_variables>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>QUEUE.HG.HRM_DATA_OPS.CORE_LOADS</queue>
+         <versioning_id>-892088648</versioning_id>
+      </row>
+   </general_attributes>
+   <documentation>
+      <row>
+         <Docu><![CDATA[This task is intended to be a generic task that will work with any load script.
+
+&CLIENT# &STREAM# are parameters that are passed in from a parent object.
+Do not hard code these parameters EVER pretty please with sugar.
+
+The &STREAM# name is a key field for ISS_STREAMS table on madintern. 
+
+&STREAM# is made up from <client>_Stream name from Streams Application and will be used to grab the Load Script associated to the stream using the ISS_STREAMS table on Madintern database.
+
+&STREAM#: must be added to the ISS_STREAMS table with
+Client: name Client acronym.
+Stream name: Name used to id stream in /df
+File Name: "Used to check for a file in current directory before streaming and loading t_table".
+Load Script: Name of .ols used to load t_table.
+t_table:  Name of t-table to be loaded.  Also used to truncate by truncate table task.]]></Docu>
+      </row>
+   </documentation>
+   <scripts>
+      <row>
+         <process><![CDATA[echo "cd /healthcare/&CLIENT#/scripts/table_load"
+cd /healthcare/&CLIENT#/scripts/table_load
+
+! Check stream directory for ols files.  If present, truncate table.
+for ols_file in /healthcare/&CLIENT#/df/&STREAM#/*.ols
+do
+! Double check to make sure file exists
+  if [ -f $ols_file ] ; then
+    echo "OLS FILE FOUND:$ols_file"
+  fi
+done
+
+echo "Will now attempt to truncate tables for all ols files found..."]]></process>
+      </row>
+      <row>
+         <pre_process>:INC JOBI.HG.STANDARD_CLIENT_AGENT_LOGIN_SET</pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[:SET &DATABASE_ENVIRONMENT# = "DEV"
+
+:DEFINE &STRING_SPLIT#, string, 6
+:SET &HND# = PREP_PROCESS_REPORT(,,,"*OLS FILE FOUND:*")
+:PROCESS &HND#
+:   SET &LINE# = GET_PROCESS_LINE(&HND#)
+:   FILL &STRING_SPLIT#[] = STR_SPLIT(&LINE#,":")
+:   SET &TEMP# = &STRING_SPLIT#[2]
+:   FILL &STRING_SPLIT#[] = STR_SPLIT(&TEMP#,".")
+:   SET &TEMP# = &STRING_SPLIT#[1]
+:   FILL &STRING_SPLIT#[] = STR_SPLIT(&TEMP#,"/")
+
+:   SET &TABLE# = &STRING_SPLIT#[6]
+:   INC JOBI.HG.STANDARD_SCRIPT.TRUNCATE_CLIENT_TABLE
+
+:   IF &RUN_STATUS# <> "0"
+:     MODIFY_STATE STATUS_TEXT="Error truncating table"
+:     MODIFY_STATE RETCODE=10
+:   ENDIF
+
+:ENDPROCESS
+:CLOSE_PROCESS &HND#
+
+! :SET &HND# = PREP_PROCESS_REPORT(,,,'*ORA-00942: table or view does not exist*')
+! :PROCESS &HND#
+! :  MODIFY_STATE STATUS_TEXT="&STREAM# Table Does Not Exist Error."
+! :  MODIFY_STATE RETCODE=9
+! :ENDPROCESS]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <object_variables>
+      <row>
+         <ert_usage>1</ert_usage>
+         <name>&amp;CLIENT#</name>
+      </row>
+      <row>
+         <ert_usage>1</ert_usage>
+         <name>&amp;STREAM#</name>
+      </row>
+      <row>
+         <name>&amp;TABLE#</name>
+      </row>
+   </object_variables>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

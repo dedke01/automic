@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<user>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>TESTUSER/ESR.COM</name>
+         <type>USER</type>
+         <versioning_id>1290257345</versioning_id>
+      </row>
+   </general_attributes>
+   <user_attributes>
+      <row>
+         <is_active>1</is_active>
+         <eh_refresh_interval>90</eh_refresh_interval>
+         <email1>dedke01@ca.com</email1>
+         <first_name>testuser</first_name>
+         <last_name>Test</last_name>
+         <is_ldap_user>1</is_ldap_user>
+      </row>
+   </user_attributes>
+</user>

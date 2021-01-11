@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>F</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_AMAZON.PRV.JOB.QUIET_TERMINATE_INSTANCE@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>200353737</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@UNIX
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+echo 'Checking exist instance &UC4RB_AWS_INSTANCE_ID#...'
+
+output=$(java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-describe-instances &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_AWS_INSTANCE_ID#)
+ret=$?
+if [ "$ret" -gt "0" ]; then
+  result=$(printf "%s\n" "$output" | grep ^Client.InvalidInstanceID.NotFound)
+  if [ "$result" != "" ]; then
+    echo 'Instance &UC4RB_AWS_INSTANCE_ID# does not exist!'
+    exit 0
+  fi
+  echo 'Failed to check instance exist.'
+  echo $output
+  exit $ret
+fi
+
+instance=$(printf "%s\n" "$output" | grep ^INSTANCE)
+if [ "$instance" == "" ]; then
+  echo 'Failed to check instance exist.'
+  echo $instance
+  exit 1
+fi
+
+echo $instance
+
+state=$(printf "%s\n" "$instance" | cut -f6)
+if [ "$state" == "terminated" ]; then
+  echo 'Instance &UC4RB_AWS_INSTANCE_ID# is terminated already!'
+  exit 0
+fi
+
+echo 'Checking exist instance &UC4RB_AWS_INSTANCE_ID# finished!'
+
+echo 'Describe instance &UC4RB_AWS_INSTANCE_ID# address...'
+:SET &UC4RB_ADDRESS_FILTER# = '--filter "instance-id=&UC4RB_AWS_INSTANCE_ID#" '
+output=$(java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-describe-addresses &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_ADDRESS_FILTER#)
+
+ret=$?
+if [ "$ret" -gt "0" ]; then
+  echo 'Failed to describe address.'
+  echo $output
+fi
+
+addresses=$(printf "%s\n" "$output" | grep ^ADDRESS)
+
+if [ "$addresses" == "" ]; then
+  echo 'No address allocated for this account or matched the instance!'
+  echo $output
+fi
+
+epialloc=$(printf "%s\n" "$addresses" | cut -f5)
+if [ "$epialloc" == "" ]; then
+  echo 'No address allocated for instance!'
+fi
+
+eipassoc=$(printf "%s\n" "$addresses" | cut -f6)
+if [ "$eipassoc" == "" ]; then
+  echo 'No address associated for instance!'
+fi
+echo $addresses
+echo 'Describe instance &UC4RB_AWS_INSTANCE_ID# address finished!'
+
+if [ "$eipassoc" != "" ]; then
+  echo 'Disassociating instance &UC4RB_AWS_INSTANCE_ID# address...'
+  output=$(java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-disassociate-address &UC4RB_AWS_COMMON_OPTIONS# -a $eipassoc)
+  result=$(printf "%s\n" "$output" | grep ^ADDRESS)
+
+  if [ "$result" == "" ]; then
+    echo 'Failed to disassociate address $eipassoc.'
+    echo $output
+  fi
+  echo $result
+  echo 'Disassociating instance &UC4RB_AWS_INSTANCE_ID# address finished!'
+fi
+
+if [ "$epialloc" != "" ]; then
+  echo 'Releasing instance &UC4RB_AWS_INSTANCE_ID# address...'
+  output=$(java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-release-address &UC4RB_AWS_COMMON_OPTIONS# -a $epialloc)
+  result=$(printf "%s\n" "$output" | grep ^ADDRESS)
+
+  if [ "$result" == "" ]; then
+    echo 'Failed to release address $epialloc.'
+    echo $output
+  fi
+  echo $result
+  echo 'Releasing instance &UC4RB_AWS_INSTANCE_ID# address finished!'
+fi
+
+echo 'Terminating instance &UC4RB_AWS_INSTANCE_ID#...'
+
+output=$(java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-terminate-instances &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_AWS_INSTANCE_ID#)
+result=$(printf "%s\n" "$output" | grep ^INSTANCE)
+
+ret=$?
+if [ "$ret" -gt "0" ]; then
+  echo 'Failed to terminate instance.'
+  echo $output
+  exit $ret
+fi
+echo $result
+echo 'Terminating instance &UC4RB_AWS_INSTANCE_ID# finished!'
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.PREPARE_JOB</pre_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <ert>717</ert>
+         <platform>WINDOWS</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>JOBS.OCI.SAAS</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>JOBS.OCI.SAAS</description>
+         <versioning_id>20035146</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[!. /etc/profile.d/proxy.sh
+@echo off
+!reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyEnable /t REG_DWORD /d 1 /f
+!reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyServer /t REG_SZ /d omcscbanajnfzj.netbjgoao.vcnhaszy.oraclevcn.com:3128 /f
+!!ECHO Test Environment Variables
+!SET testpod_loginid=srinivas.nadimetla@bakerhughes.com
+!SET testpod_password=K:\incoming\SaaS\Password\passwordSecure.epw
+!SET testpod_url=https://epm-test-a633165.epm.us6.oraclecloud.com/HyperionPlanning
+!SET testpod_domain=a633165
+!SET testpod_dailybackuname=SyncFromQA2PROD
+!SET testpod_password=L:\incoming\SaaS\Password\passwordSecure.epw
+dir
+echo "started"
+!CALL epmautomate login SVC-EPM_INT_ADMIN@bakerhughes.com G04L0nd0n@n0w %testpod_url% %testpod_domain%
+!CALL epmautomate.bat login "SVC-EPM_INT_ADMIN@bakerhughes.com" "G04L0nd0n@n0w" "https://epm-test-a633165.epm.us6.oraclecloud.com/HyperionPlanning"
+!echo "hello world"
+!CALL epmautomate logout
+cd D:\Custom\EPMAutomate\bin\
+CALL TEST.bat
+echo "ended"]]></process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>WINDOWS</platform>
+         <agent>BKRHHYPDEVWT01</agent>
+         <login>LOGIN.ORACLE</login>
+         <job_report_path>2</job_report_path>
+         <win_work_dir>D:\</win_work_dir>
+         <win_typ>0</win_typ>
+         <win_view>0</win_view>
+         <win_logon_as_batch>1</win_logon_as_batch>
+         <win_show_at_desktop>0</win_show_at_desktop>
+         <win_report_by_script>0</win_report_by_script>
+         <job_object></job_object>
+         <win_cmd></win_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

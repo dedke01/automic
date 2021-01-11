@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<evnt>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <ert>19</ert>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel>1</max_parallel>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>EVNT.TST_GRC_ARM_SPM_WORKFLOW_SYNC_UPDT.TST_SAP_GRAC_SPM_WORKFLOW_SYNC_UPDT_QG1200_00005M</name>
+         <type>EVNT</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <sub_type>TT</sub_type>
+         <description>Timeevent for JOBS.TST_SAP_GRAC_SPM_WORKFLOW_SYNC_UPDT_QG1200</description>
+         <versioning_id>359650901</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[!Starting Object JOBS.TST_SAP_GRAC_SPM_WORKFLOW_SYNC_UPDT_QG1200
+
+:IF SYS_STATE_ACTIVE('JOBS.TST_SAP_GRAC_SPM_WORKFLOW_SYNC_UPDT_QG1200') = 'N'
+:  SET &RUNNR# = ACTIVATE_UC_OBJECT('JOBS.TST_SAP_GRAC_SPM_WORKFLOW_SYNC_UPDT_QG1200')
+:ENDIF]]></process>
+      </row>
+   </scripts>
+   <event_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <type>TT</type>
+         <repeat_type>R</repeat_type>
+         <execution_type>S</execution_type>
+         <time_period>0005</time_period>
+      </row>
+   </event_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</evnt>

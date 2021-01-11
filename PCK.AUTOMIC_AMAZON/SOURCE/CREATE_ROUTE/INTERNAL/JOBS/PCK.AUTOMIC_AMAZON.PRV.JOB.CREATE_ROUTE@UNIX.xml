@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_AMAZON.PRV.JOB.CREATE_ROUTE@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>-842326511</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@UNIX
+
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+:SET &UC4RB_CREATE_ROUTE_OPTIONS# = ''
+:IF &UC4RB_AWS_GATEWAY_ID# <> ""
+:  SET &UC4RB_CREATE_ROUTE_OPTIONS# = STR_CAT(&UC4RB_CREATE_ROUTE_OPTIONS#, '-g &UC4RB_AWS_GATEWAY_ID# ')
+:ENDIF
+
+:IF &UC4RB_AWS_INSTANCE_ID# <> ""
+:  SET &UC4RB_CREATE_ROUTE_OPTIONS# = STR_CAT(&UC4RB_CREATE_ROUTE_OPTIONS#, '-i &UC4RB_AWS_INSTANCE_ID# ')
+:ENDIF
+
+:IF &UC4RB_AWS_NIC_ID# <> ""
+:  SET &UC4RB_CREATE_ROUTE_OPTIONS# = STR_CAT(&UC4RB_CREATE_ROUTE_OPTIONS#, '-n &UC4RB_AWS_NIC_ID# ')
+:ENDIF
+
+:IF &UC4RB_CREATE_ROUTE_OPTIONS# = ""
+:  PRINT You must provide one of following: Gateway ID, Instance ID, Network Interface ID
+:  EXIT 1
+:ENDIF
+
+echo 'Creating new route..'
+
+java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-create-route &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_AWS_ROUTE_TABLE_ID# -r &UC4RB_AWS_CIDR# &UC4RB_CREATE_ROUTE_OPTIONS#
+
+ret=$?
+if [ "$ret" -gt "0" ]; then
+  echo Failed to create route.
+  exit $ret
+fi
+
+echo Successfully create route.
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.PREPARE_JOB</pre_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

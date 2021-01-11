@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scri>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <ert>1</ert>
+         <last_runtimes>AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>SCRI.DATABASE_MAINTENANCE</name>
+         <type>SCRI</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>-1940663020</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[!Settings of the last maintaining procedure are to be retrieved.
+
+:SET &default_value_m# = GET_VAR('VARA.DATABASE_MAINTENANCE','CLIENT')
+
+:SET &default_value_a# = GET_VAR('VARA.DATABASE_MAINTENANCE','ARCHIVING')
+
+:SET &default_value_r# = GET_VAR('VARA.DATABASE_MAINTENANCE','REORGANIZING')
+
+:SET &default_value_e# = GET_VAR('VARA.DATABASE_MAINTENANCE','UNLOADING')
+
+
+
+
+
+!A Dialog is to be displayed in which the user can specify the options for database maintenance
+
+:BEGINREAD
+
+:PRINT "MAINTAINING THE AE database"
+
+:PRINT "--------------------------------------------------------------------------"
+
+:READ &client#, "0-9999", 'client (0-9999)', &default_value_m#
+
+:PRINT "--------------------------------------------------------------------------"
+
+:PRINT ""
+
+:PRINT "Archiving"
+
+:READ &archiving#, "'Y','N'",'Shall the database be archived?', &default_value_a#
+
+:PRINT ""
+
+:PRINT "Reorganizing"
+
+:READ &reorganizing#, "'Y','N'",'Shall the database be reorganized?', &default_value_r#
+
+:PRINT ""
+
+:PRINT "Unloading the DB"
+
+:READ &unloading#, "'Y','N'",'Shall the database be unloaded?', &default_value_e#
+
+:PRINT ""
+
+:PRINT "--------------------------------------------------------------------------"
+
+:ENDREAD
+
+
+
+
+
+!If the user selects "No" for each option, database maintenance is not necessary.
+
+:IF &archiving# = 'N'
+
+:   IF &reorganizing# = 'N'
+
+:      IF &unloading# = 'N'
+
+:      SET &start# = 'N'
+
+:      ENDIF
+
+:   ENDIF
+
+:ENDIF
+
+
+
+:IF &start# = 'N'
+
+:  BEGINREAD
+
+:  PRINT 'Database maintenance not necessary.'
+
+:  ENDREAD
+
+:ELSE
+
+:  PUT_VAR 'VARA.DATABASE_MAINTENANCE','CLIENT',&client#
+
+:  PUT_VAR 'VARA.DATABASE_MAINTENANCE','ARCHIVING',&archiving#
+
+:  PUT_VAR 'VARA.DATABASE_MAINTENANCE','REORGANIZING',&reorganizing#
+
+:  PUT_VAR 'VARA.DATABASE_MAINTENANCE','UNLOADING',&unloading#
+
+!The workflow for database maintenance is started.
+
+:  SET &ret = ACTIVATE_UC_OBJECT('JOBP.DATABASE_MAINTENANCE')
+
+:ENDIF]]></process>
+      </row>
+   </scripts>
+   <script_attributes>
+      <row>
+      </row>
+   </script_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</scri>
