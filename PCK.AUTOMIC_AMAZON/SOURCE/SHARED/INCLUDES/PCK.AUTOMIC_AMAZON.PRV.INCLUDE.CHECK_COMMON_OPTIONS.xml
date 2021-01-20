@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobi>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS</name>
+         <type>JOBI</type>
+         <versioning_id>495722679</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:SET &UC4RB_AWS_COMMON_OPTIONS# = ''
+
+! Check the input params
+
+:IF &UC4RB_AWS_URL# <> ""
+:  SET &UC4RB_AWS_COMMON_OPTIONS# = '-U &UC4RB_AWS_URL# '
+:ENDIF
+
+:IF &UC4RB_AWS_REGION# <> ""
+:  SET &UC4RB_AWS_COMMON_OPTIONS# = STR_CAT(&UC4RB_AWS_COMMON_OPTIONS#, '--region &UC4RB_AWS_REGION# ')
+:ENDIF
+
+:IF &UC4RB_AWS_SECURITY_TOKEN# <> ""
+:  IF &UC4RB_AWS_SECURITY_TOKEN# <> "--10"
+:    SET &UC4RB_AWS_COMMON_OPTIONS# = STR_CAT(&UC4RB_AWS_COMMON_OPTIONS#, '--security-token &UC4RB_AWS_SECURITY_TOKEN# ')
+:  ENDIF
+:ENDIF
+
+:IF &UC4RB_AWS_CONN_TIMEOUT# = ""
+:  SET &UC4RB_AWS_CONN_TIMEOUT# = 30
+:  SET &UC4RB_AWS_COMMON_OPTIONS# = STR_CAT(&UC4RB_AWS_COMMON_OPTIONS#, '--connection-timeout &UC4RB_AWS_CONN_TIMEOUT# ')
+:ENDIF
+
+:IF &UC4RB_AWS_REQ_TIMEOUT# = ""
+:  SET &UC4RB_AWS_REQ_TIMEOUT# = 45
+:  SET &UC4RB_AWS_COMMON_OPTIONS# = STR_CAT(&UC4RB_AWS_COMMON_OPTIONS#, '--request-timeout &UC4RB_AWS_REQ_TIMEOUT# ')
+:ENDIF
+
+:IF &UC4RB_AWS_ACCESS_KEY# <> "" OR "--10"
+:  SET &UC4RB_AWS_COMMON_OPTIONS# = STR_CAT(&UC4RB_AWS_COMMON_OPTIONS#, '-O &UC4RB_AWS_ACCESS_KEY# ')
+:ENDIF
+
+:IF &UC4RB_AWS_SECRET_KEY# <> "" OR "--10"
+:  SET &UC4RB_AWS_COMMON_OPTIONS# = STR_CAT(&UC4RB_AWS_COMMON_OPTIONS#, '-W &UC4RB_AWS_SECRET_KEY# ')
+:ENDIF]]></process>
+      </row>
+   </scripts>
+</jobi>

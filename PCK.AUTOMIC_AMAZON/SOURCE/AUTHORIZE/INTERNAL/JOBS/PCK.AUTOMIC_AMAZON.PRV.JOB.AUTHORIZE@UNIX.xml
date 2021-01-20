@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_AMAZON.PRV.JOB.AUTHORIZE@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>-1151997244</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@UNIX
+
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+:SET &UC4RB_AUTHORIZE_OPTIONS# = ''
+:IF &UC4RB_AWS_EGRESS_RULE# = 'YES'
+:  SET &UC4RB_AUTHORIZE_OPTIONS# = STR_CAT(&UC4RB_AUTHORIZE_OPTIONS#, '--egress ')
+:ENDIF
+
+:SET &UC4RB_AUTHORIZE_OPTIONS# = STR_CAT(&UC4RB_AUTHORIZE_OPTIONS#, '-P &UC4RB_AWS_PROTOCOL# ')
+
+:IF &UC4RB_AWS_PORT_RANGE# <> ''
+:  SET &UC4RB_AUTHORIZE_OPTIONS# = STR_CAT(&UC4RB_AUTHORIZE_OPTIONS#, '-p "&UC4RB_AWS_PORT_RANGE#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_ICMP_TYPE# <> ''
+:  SET &UC4RB_AUTHORIZE_OPTIONS# = STR_CAT(&UC4RB_AUTHORIZE_OPTIONS#, '-t "&UC4RB_AWS_ICMP_TYPE#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_SRC_DST_GRP_OWNER# <> ''
+:  SET &UC4RB_AUTHORIZE_OPTIONS# = STR_CAT(&UC4RB_AUTHORIZE_OPTIONS#, '-u "&UC4RB_AWS_SRC_DST_GRP_OWNER#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_SRC_DST_GRP# <> ''
+:  SET &UC4RB_AUTHORIZE_OPTIONS# = STR_CAT(&UC4RB_AUTHORIZE_OPTIONS#, '-o "&UC4RB_AWS_SRC_DST_GRP#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_CIDR# <> ''
+:  SET &UC4RB_AUTHORIZE_OPTIONS# = STR_CAT(&UC4RB_AUTHORIZE_OPTIONS#, '-s "&UC4RB_AWS_CIDR#" ')
+:ENDIF
+
+echo 'Adding rule to security group &UC4RB_AWS_SECURITY_GRP#..'
+
+java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-authorize &UC4RB_AWS_COMMON_OPTIONS# "&UC4RB_AWS_SECURITY_GRP#" &UC4RB_AUTHORIZE_OPTIONS#
+
+ret=$?
+if [ "$ret" -gt "0" ]; then
+  echo Failed to authorize rule
+  exit $ret
+fi
+
+echo Successfully authorize new rule
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.PREPARE_JOB</pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "GROUP*")
+:PROCESS &output_entry#
+:  SET &output_line# = GET_PROCESS_LINE(&output_entry#, 1)
+:  SET &tab# = STR_CUT(&output_line#, 6, 1)
+:  SET &output_line# = SUBSTR(&output_line#, 7)
+:  SET &output_line# = STR_SUB(&output_line#, &tab#, " ")
+:  SET &UC4RB_OUT_GROUP_NAME# = STR_TRIM(&output_line#)
+:  PUBLISH &UC4RB_OUT_GROUP_NAME#, , 'WORKFLOW'
+:  PRINT Group name (for EC2) or ID (for VPC) = &UC4RB_OUT_GROUP_NAME#
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#
+
+:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "PERMISSION*")
+:PROCESS &output_entry#
+:  SET &output_line# = GET_PROCESS_LINE(&output_entry#, 1)
+
+!  Extract the delimiter character from this output_line, usually the tab character
+:  SET &tab# = STR_CUT(&output_line#, 11, 1)
+:  SET &output_line# = SUBSTR(&output_line#, 12)
+
+:  SET &UC4RB_OUT_RULE_TYPE# = 'ALLOWS'
+:  SET &index# = STR_FIND(&output_line#, &UC4RB_OUT_RULE_TYPE#)
+:  SET &index# = &index# + 7
+:  SET &output_line# = SUBSTR(&output_line#, &index#)
+:  SET &output_line# = STR_SUB(&output_line#, &tab#, " ")
+:  DEFINE &results#, string, 9
+:  FILL &results#[] = STR_SPLIT(&output_line#, " ")
+:  SET &len# = LENGTH(&results#[], SIZE)
+
+:  SET &UC4RB_OUT_PROTOCOL_ALLOW# = &results#[1]
+:  SET &UC4RB_OUT_PORT_RANGE_START# = &results#[2]
+:  SET &UC4RB_OUT_PORT_RANGE_END# = &results#[3]
+
+:  PUBLISH &UC4RB_OUT_RULE_TYPE#, ,'WORKFLOW'
+:  PUBLISH &UC4RB_OUT_PROTOCOL_ALLOW#, ,'WORKFLOW'
+:  PUBLISH &UC4RB_OUT_PORT_RANGE_START#, ,'WORKFLOW'
+:  PUBLISH &UC4RB_OUT_PORT_RANGE_END#, ,'WORKFLOW'
+
+:  PRINT The type of rule = &UC4RB_OUT_RULE_TYPE#
+:  PRINT The protocol to allow = &UC4RB_OUT_PROTOCOL_ALLOW#
+:  PRINT The start of port range = &UC4RB_OUT_PORT_RANGE_START#
+:  PRINT The end of port range = &UC4RB_OUT_PORT_RANGE_END#
+
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#
+]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

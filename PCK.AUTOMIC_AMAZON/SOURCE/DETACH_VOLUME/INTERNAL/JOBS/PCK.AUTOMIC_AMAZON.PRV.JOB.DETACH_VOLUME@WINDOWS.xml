@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>WINDOWS</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_AMAZON.PRV.JOB.DETACH_VOLUME@WINDOWS</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>1631789418</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.POWERSHELL_UTILITY
+:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@WINDOWS
+
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+:SET &UC4RB_DETACH_VOLUME_PARAMS# = '&UC4RB_AWS_VOLUME_ID# '
+:IF &UC4RB_AWS_INSTANCE_ID# <> ''
+:  SET &UC4RB_DETACH_VOLUME_PARAMS# = STR_CAT(&UC4RB_DETACH_VOLUME_PARAMS#, '--instance &UC4RB_AWS_INSTANCE_ID# ')
+:  IF &UC4RB_AWS_VOLUME_DEVICE# <> ''
+:    SET &UC4RB_DETACH_VOLUME_PARAMS# = STR_CAT(&UC4RB_DETACH_VOLUME_PARAMS#, '--device &UC4RB_AWS_VOLUME_DEVICE# ')
+:  ENDIF
+:ENDIF
+:IF &UC4RB_AWS_FORCE_DETACH# = 'YES'
+:  SET &UC4RB_DETACH_VOLUME_PARAMS# = STR_CAT(&UC4RB_DETACH_VOLUME_PARAMS#, '--force')
+:ENDIF
+
+Write-Host Detaching EBS volume..
+
+$output = java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute $env:EC2_HOME\bin\ec2-detach-volume.cmd &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_DETACH_VOLUME_PARAMS#
+
+$result = $output | select-string -pattern ^ATTACHMENT -caseSensitive
+
+[string]::join("`n", $output)
+
+if (![bool]($result)) {
+  Write-Host Failed to detach EBS volume
+  exit 1
+}
+
+$split = ($result.tostring() -replace '\s+', " ").Trim().split(" ")
+$attachment_state = $split[4]
+
+:IF &UC4RB_AWS_IS_DETACHED# = 'YES'
+  Write-Host Waiting for volume to detach..
+  $count = 0
+  while ($attachment_state -ne "detached") {
+    if ($count -eq &UC4RB_AWS_MAX_RETRIES#) {
+      Write-Host "Volume &UC4RB_AWS_VOLUME_ID# still not detached after attachment state checking for &UC4RB_AWS_MAX_RETRIES# times"
+      exit 1
+    }
+
+    Write-Host Volume &UC4RB_AWS_VOLUME_ID# is still not detached`, will re-check after &UC4RB_AWS_RETRY_INTERVAL# seconds..
+    Start-Sleep -s &UC4RB_AWS_RETRY_INTERVAL#
+    $output = java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute $env:EC2_HOME\bin\ec2-describe-volumes.cmd &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_AWS_VOLUME_ID#
+    [string]::join("`n", $output)
+    $result = $output | select-string -pattern ^ATTACHMENT.*&UC4RB_AWS_INSTANCE_ID#.* -caseSensitive
+    if (![bool]($result)) {
+      break
+    }
+    $split = $result.tostring().split("`t")
+    $attachment_state = $split[4]
+    $count++
+  }
+  Write-Host "Volume $volume_id is detached"
+:ENDIF
+
+Write-Host "`nSuccessfully detach EBS volume"
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_POWERSHELL_CMD@WINDOWS]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.PREPARE_JOB</pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "ATTACHMENT*")
+:PROCESS &output_entry#
+:  SET &output_line# = GET_PROCESS_LINE(&output_entry#, 1)
+
+!  Extract the delimiter character from this line, usually the tab character
+:  SET &tab# = STR_CUT(&output_line#, 11, 1)
+:  SET &output_line# = SUBSTR(&output_line#, 12)
+!  Replace the tab character with single space to easier to split
+:  SET &output_line# = STR_SUB(&output_line#, &tab#, " ")
+
+:  DEFINE &results#, string, 6
+:  FILL &results#[] = STR_SPLIT(&output_line#, " ")
+
+:  SET &UC4RB_OUT_VOLUME_STATE# = &results#[4]
+:  TERM_PROCESS
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#
+
+:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "Volume*is detached*")
+:PROCESS &output_entry#
+:  SET &UC4RB_OUT_VOLUME_STATE# = 'detached'
+:  TERM_PROCESS
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#
+
+:PUBLISH &UC4RB_OUT_VOLUME_STATE#, , "WORKFLOW"
+
+:PRINT Attachment state: &UC4RB_OUT_VOLUME_STATE#]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <platform>WINDOWS</platform>
+         <agent><![CDATA[<WIN>]]></agent>
+         <job_report_path>2</job_report_path>
+         <win_work_dir>c:\</win_work_dir>
+         <win_typ>2</win_typ>
+         <win_view>0</win_view>
+         <win_logon_as_batch>0</win_logon_as_batch>
+         <win_show_at_desktop>0</win_show_at_desktop>
+         <win_report_by_script>0</win_report_by_script>
+         <job_object></job_object>
+         <win_cmd></win_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

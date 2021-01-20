@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>UNIX</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_AMAZON.PRV.JOB.CREATE_NETWORK_INTERFACE@UNIX</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>-575767088</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@UNIX
+
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+:SET &UC4RB_CREATE_NI_OPTIONS# = ''
+:IF &UC4RB_AWS_DESC# <> ""
+:  SET &UC4RB_CREATE_NI_OPTIONS# = STR_CAT(&UC4RB_CREATE_NI_OPTIONS#, '-d "&UC4RB_AWS_DESC#" ')
+:ENDIF
+
+:IF &UC4RB_AWS_PRIV_IP# <> ""
+:  SET &UC4RB_CREATE_NI_OPTIONS# = STR_CAT(&UC4RB_CREATE_NI_OPTIONS#, '--private-ip-address &UC4RB_AWS_PRIV_IP# ')
+:ENDIF
+
+:IF &UC4RB_AWS_SEC_IPS# <> ""
+:  IF &UC4RB_AWS_SEC_IP_COUNT# <> ""
+:    PRINT "You cannot specify secondary IP addresses count when also specifying secondary IPs "
+:    EXIT 1
+:  ENDIF
+
+:  DEFINE &UC4RB_SECONDARY_IP_LIST#, string, 100
+:  FILL &UC4RB_SECONDARY_IP_LIST#[] = STR_SPLIT(&UC4RB_AWS_SEC_IPS#, ",")
+:  SET &UC4RB_LEN# = LENGTH(&UC4RB_SECONDARY_IP_LIST#[], SIZE)
+:  SET &UC4RB_INDEX# = 1
+:  SET &UC4RB_SECONDARY_IP_OPTION# = ''
+:  WHILE &UC4RB_INDEX# LE &UC4RB_LEN#
+:    SET &UC4RB_IP_ADDRESS# = STR_TRIM(&UC4RB_SECONDARY_IP_LIST#[&UC4RB_INDEX#])
+:    SET &UC4RB_SECONDARY_IP_OPTION# = STR_CAT(&UC4RB_SECONDARY_IP_OPTION#, '--secondary-private-ip-address &UC4RB_IP_ADDRESS# ')
+:    SET &UC4RB_INDEX# = &UC4RB_INDEX# + 1
+:  ENDWHILE
+:  SET &UC4RB_CREATE_NI_OPTIONS# = STR_CAT(&UC4RB_CREATE_NI_OPTIONS#, &UC4RB_SECONDARY_IP_OPTION#)
+
+:ELSE
+:  IF &UC4RB_AWS_SEC_IP_COUNT# <> ""
+:    SET &UC4RB_CREATE_NI_OPTIONS# = STR_CAT(&UC4RB_CREATE_NI_OPTIONS#, '--secondary-private-ip-address-count &UC4RB_AWS_SEC_IP_COUNT# ')
+:  ENDIF
+:ENDIF
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_SECURITY_GROUPS_OPTIONS
+:IF &UC4RB_SG_OPTIONS# <> ""
+:  SET &UC4RB_CREATE_NI_OPTIONS# = STR_CAT(&UC4RB_CREATE_NI_OPTIONS#, '&UC4RB_SG_OPTIONS# ')
+:ENDIF
+
+echo "Create network interface.."
+
+java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute "$EC2_HOME"/bin/ec2-create-network-interface &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_CREATE_NI_OPTIONS# &UC4RB_AWS_SUBNET_ID#
+
+ret=$?
+if [ "$ret" -gt "0" ]; then
+  echo Failed to create network interface
+  exit $ret
+else
+  echo Successfully create network interface
+fi
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_SHELL_CMD@UNIX]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.PREPARE_JOB</pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "NETWORKINTERFACE*")
+:PROCESS &output_entry#
+:  SET &output_line# = GET_PROCESS_LINE(&output_entry#, 1)
+
+!  Extract the delimiter character from this output_line, usually the tab character
+:  SET &tab# = STR_CUT(&output_line#, 17, 1)
+
+!  Cut the INSTANCE from the string output_line
+:  SET &output_line# = SUBSTR(&output_line#, 18)
+!  Replace all tab characters with single space
+:  SET &output_line# = STR_SUB(&output_line#, &tab#, " ")
+:  DEFINE &results#, string, 11
+:  FILL &results#[] = STR_SPLIT(&output_line#, " ")
+:  SET &UC4RB_OUT_NIC_ID# = &results#[1]
+:  PUBLISH &UC4RB_OUT_NIC_ID#,,'TOP'
+:  TERM_PROCESS
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#
+
+:SET &UC4RB_OUT_IP# = ''
+
+:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "PRIVATEIPADDRESS*")
+:PROCESS &output_entry#
+:  SET &output_line# = GET_PROCESS_LINE(&output_entry#, 1)
+:  SET &output_line# = SUBSTR(&output_line#, 18)
+:  SET &address# = STR_TRIM(&output_line#)
+:  SET &UC4RB_OUT_IP# = STR_CAT(&UC4RB_OUT_IP#, '&address#,')
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#
+
+:SET &len# = STR_LENGTH(&UC4RB_OUT_IP#)
+:IF &len# GT 0
+:  SET &len# = &len# - 1
+:  SET &UC4RB_OUT_IP# = SUBSTR(&UC4RB_OUT_IP#, 1, &len#)
+:  PRINT List of output IPs: &UC4RB_OUT_IP#
+:  PUBLISH &UC4RB_OUT_IP#,, 'TOP'
+:ENDIF]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <platform>UNIX</platform>
+         <agent><![CDATA[<UNIX>]]></agent>
+         <job_report_path>2</job_report_path>
+         <priority>0</priority>
+         <unix_shell>-bash</unix_shell>
+         <unix_shell_options></unix_shell_options>
+         <unix_type></unix_type>
+         <unix_cmd></unix_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<evnt>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>EVNT.TIME.NEW.1</name>
+         <type>EVNT</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <sub_type>TT</sub_type>
+         <versioning_id>1797953409</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <pre_process><![CDATA[!********************************
+!EVNT.ROLLING_TRACE_START - Event tab
+!********************************
+!Check Intervals of:  X minutes
+!Check: Repeated
+!********************************
+!
+!EVNT.ROLLING_TRACE_START - Process tab
+!
+!********************************
+
+!
+! Turn On
+!
+!Set a TCP/IP=2 and DB=4 trace on the WPs
+!Get System Name
+:SET &TRC# = GET_UC_SYSTEM_NAME()
+
+!Turn on tracing for WPs
+:SET_UC_SETTING SET_TRACE, &TRC#, "2400000000000000", "FILE"
+
+!Set a TCP/IP=9 trace on the Agent - <Agent Name> needs to change to reflect actual agent
+!Turn on tracing
+:SET_UC_SETTING SET_TRACE, "<Agent Name>", "9000000000000000", "FILE"]]></pre_process>
+      </row>
+   </scripts>
+   <event_attributes>
+      <row>
+         <type>TT</type>
+         <repeat_type>R</repeat_type>
+         <execution_type>S</execution_type>
+         <time_period>0010</time_period>
+      </row>
+   </event_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</evnt>

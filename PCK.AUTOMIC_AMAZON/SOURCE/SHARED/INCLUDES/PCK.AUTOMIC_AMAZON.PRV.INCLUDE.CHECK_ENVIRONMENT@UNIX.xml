@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobi>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@UNIX</name>
+         <type>JOBI</type>
+         <versioning_id>-424947444</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[! Check EC2_HOME environment variable
+if [ -z "$EC2_HOME" ]; then
+  echo Environment variable EC2_HOME is not defined. This environment variable needed for EC2 API tools e.g /home/utils/ec2-api-tools-1.7.5.1
+  echo Exiting now..
+  exit 1
+fi
+
+! Check JAVA_HOME environment variable
+if [ -z "$JAVA_HOME" ]; then
+  echo Environment variable JAVA_HOME is not defined. This environment variable is needed for EC2 API Tools.
+  echo Exiting now..
+  exit 1
+fi]]></process>
+      </row>
+   </scripts>
+</jobi>

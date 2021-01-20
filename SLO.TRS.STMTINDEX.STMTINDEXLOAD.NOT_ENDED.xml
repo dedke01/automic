@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<slo>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>12.0</minimum_ae_version>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>SLO.TRS.STMTINDEX.STMTINDEXLOAD.NOT_ENDED</name>
+         <type>SLO</type>
+         <description>SLO to monitor for completion of Statement Indexer workflow</description>
+         <versioning_id>-830475562</versioning_id>
+      </row>
+   </general_attributes>
+   <slo_attributes>
+      <row>
+         <consider_latest_end>1</consider_latest_end>
+         <execute_on_violation>1</execute_on_violation>
+         <latest_end_time>0030</latest_end_time>
+         <latest_start_time>0000</latest_start_time>
+         <monitor_from>0000</monitor_from>
+         <monitor_to>0000</monitor_to>
+         <alarm_on_violation>CALL.TRS.STMTINDEX.STMTINDEXLOAD.NOT_ENDED</alarm_on_violation>
+         <weekdays>1234567</weekdays>
+         <service_query><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<queryTreeNode groupOperator="ALL">
+    <node>
+        <criterion>
+            <attributeValue>OBJECT_NAME</attributeValue>
+            <operator>EQUALS</operator>
+            <value>PRD.JOBP.TRS.STMTINDEX.STMTINDEXLOAD</value>
+        </criterion>
+    </node>
+</queryTreeNode>
+]]></service_query>
+      </row>
+   </slo_attributes>
+</slo>

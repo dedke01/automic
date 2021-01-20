@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <ert>3</ert>
+         <platform>WINDOWS</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel>1</max_parallel>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>KST.JOBS.WIN.CXL.TOTEM.CURL_DOWNLOAD_RESULTS.TEST</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CXL_QUEUE</queue>
+         <description>Download results from Totem after they analyze the data</description>
+         <versioning_id>-799456095</versioning_id>
+      </row>
+   </general_attributes>
+   <documentation>
+      <row>
+         <_Procedure><![CDATA[<?xml version="1.0" encoding="ISO-8859-15" standalone="no"?>
+<!DOCTYPE Content [
+]>
+<Content>Contact: Andrew Doig&lt;/br&gt;&#13;
+Business User: Simon Ross&lt;/br&gt;&#13;
+Any issues with this job you can't resolve, contact Andrew Doig or Judi Hayashi&lt;/br&gt;&#13;
+&lt;/br&gt;&#13;
+CXL Totem is used to validate/analyze CXL trader call data by an outside vendor, Totem.&lt;/br&gt;&#13;
+If it fails, check the report for the error, if a file was downloaded check the contents of the file for the error.&lt;/br&gt;&#13;
+If you run the curl command 2 or 3 times with error it will lock the account. This will be noted in the download file&lt;/br&gt;&#13;
+If the account is locked, email the vendor to unlock the account be sure to supply the account name which is in the curl command.&lt;/br&gt;&#13;
+You can run the line 9 command that will do a dir on the FTP site to verify it is access the site.&lt;/br&gt;&#13;
+&lt;/br&gt;&#13;
+Totem support:&#129;MK-TotemOperations@ihsmarkit.com;&#129;Douglas.Crawford@ihsmarkit.com&#129;&lt;/br&gt;</Content>
+]]></_Procedure>
+      </row>
+   </documentation>
+   <scripts>
+      <row>
+         <process><![CDATA[:INC KST.JOBI.JOBS.PROCESS.GLOBAL,nofound=ignore
+
+:PRINT "api call with previous day | https://totem.markit.com/api/unified/daily/COM/PG/results/csv/&PREVDAY#"
+:PRINT "Drop file location using previous day | \\gva0ms01\Totem\Results\80010_DD_&PREVDAY_YMD#_COM_PG_RESULTS_40.csv"
+
+curl -k -F username=kstappsysnot@kochind.com -F password=P_sswrd123 https://totem.markit.com/api/unified/daily/COM/PG/browse/subareas
+!curl -k -F username=kstappsysnot@kochind.com -F password=P_sswrd123  https://totem.markit.com/api/unified/daily/COM/PG/results/csv/&PREVDAY#  > "\\gva0ms01\Totem\Results\80010_DD_&PREVDATE_YMD#_COM_PG_RESULTS_40.csv"
+curl -k -F username=kstappsysnot@kochind.com -F password=P_sswrd123  https://totem.markit.com/api/unified/daily/COM/PG/results/csv/&PREVDAY#   > "d:\data\cxlTotem\Results\80010_DD_&PREVDATE_YMD#_COM_PG_RESULTS_40.csv"
+!curl -k -F username=kstappsysnot@kochind.com -F password=P_sswrd123  https://totem.markit.com/api/unified/daily/COM/PG/results/csv/2020-08-06  > "\\gva0ms01\Totem\Results\80010_DD_20200806_COM_PG_RESULTS_40.csv"
+
+set retcode=%errorlevel%
+if NOT %retcode% == 0 set errorlevel=1]]></process>
+      </row>
+      <row>
+         <pre_process><![CDATA[:INC KST.JOBI.JOBS.PREPROCESS.GLOBAL,nofound=ignore
+
+]]></pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[:INC KST.JOBI.JOBS.POSTPROCESS.GLOBAL,nofound=ignore
+
+]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>WINDOWS</platform>
+         <agent>KSTICT0AP113.WIN.PROD</agent>
+         <login>KST.LOGIN.WIN.SVC_KST_CXLTOTEM</login>
+         <job_report_path>2</job_report_path>
+         <win_work_dir>d:\bin\cxltotem</win_work_dir>
+         <win_typ>0</win_typ>
+         <win_view>0</win_view>
+         <win_logon_as_batch>0</win_logon_as_batch>
+         <win_show_at_desktop>0</win_show_at_desktop>
+         <win_report_by_script>0</win_report_by_script>
+         <job_object></job_object>
+         <win_cmd></win_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>
