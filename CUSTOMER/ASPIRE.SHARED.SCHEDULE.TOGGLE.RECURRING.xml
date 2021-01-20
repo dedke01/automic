@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scri>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <ert>1</ert>
+         <ert_trend>2</ert_trend>
+         <last_runtimes>AQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>ASPIRE.SHARED.SCHEDULE.TOGGLE.RECURRING</name>
+         <type>SCRI</type>
+         <has_object_variables>1</has_object_variables>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <description>Toggle the RECURRING jobs Start or Stop</description>
+         <versioning_id>453659529</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[!Script to start or stop the Recurring Schedule Jobs
+!Parameter TOGGLE will be passed here as GO or STOP
+!:IF &VALIDATE_VAR# <> 1
+!:  PRINT "HI"
+!:  DEFINE &RECURRING_SCHEDULES#, string, 10
+!:ENDIF
+!:PRINT &VALIDATE_VAR#
+
+:SET &LENGTH# = LENGTH(&RECURRING_SCHEDULES#[])
+:PRINT &RECURRING_SCHEDULES#[1]
+:SET &NL# = UC_CRLF()
+:PRINT &NL#
+:PRINT " Total Jobs For Recurring :  &LENGTH# and TOGGLE = &TOGGLE# &NL#"
+:SET &COUNT# = 1
+:WHILE &COUNT# <= &LENGTH#
+:  PRINT &NL#
+:  PRINT " Currently Processing : &RECURRING_SCHEDULES#[&COUNT#] "
+:  SET &RUNID# = GET_UC_OBJECT_NR(&RECURRING_SCHEDULES#[&COUNT#])
+:  PRINT " RUNID of the Job = &RUNID# "
+:  IF &RUNID# = ""
+:    PRINT " EMPTY RUNID &RUNID# Means Job is not currently scheduled to Toggle status "
+:  ELSE
+:    SET &STATUS# = TOGGLE_OBJECT_STATUS(&RUNID#, &TOGGLE#)
+:    IF &STATUS# = 0
+:      PRINT " SUCCESS - Changed the Job Status Successfully to : &TOGGLE# , Status = &STATUS#"
+:    ELSE
+:      PRINT " FAILED to Change the Job Status to : &TOGGLE# , Status = &STATUS#"
+:    ENDIF
+:  ENDIF
+:  SET &COUNT# = &COUNT# + 1
+:ENDWHILE
+
+
+]]></process>
+      </row>
+   </scripts>
+   <script_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+      </row>
+   </script_attributes>
+   <object_variables>
+      <row>
+         <value>&amp;TOGGLE#</value>
+         <name>&amp;TOGGLE#</name>
+      </row>
+   </object_variables>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</scri>

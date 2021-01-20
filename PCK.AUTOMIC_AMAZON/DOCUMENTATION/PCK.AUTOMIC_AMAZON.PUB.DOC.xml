@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<docu>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>PCK.AUTOMIC_AMAZON.PUB.DOC</name>
+         <type>DOCU</type>
+         <versioning_id>-1287592390</versioning_id>
+      </row>
+   </general_attributes>
+   <documentation>
+      <row>
+         <Docu><![CDATA[Amazon EC2 functions
+
+=Requirements=
+
+On the executing agent the java and the Amazon EC2 API Tools must be installed and JAVA_HOME and EC2_HOME must be defined.
+Download Amazon EC2 API Tools from Amazon S3 https://aws.amazon.com/items/351?externalID=351
+
+Info
+There is a bug with the revoke action and the cli in version 1.6.6.4.
+At the moment it is not possible to revoke the default egress rule via the cli tool.
+This bug is fixed 1.6.7
+
+=Rollback=
+
+The amazon AWS actions do not support rollbacks yet.
+]]></Docu>
+      </row>
+   </documentation>
+</docu>

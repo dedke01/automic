@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hostg>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <platform>WINDOWS</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>HOSTG.WS.AUT.ACTIVE</name>
+         <type>HOSTG</type>
+         <versioning_id>1998088073</versioning_id>
+      </row>
+   </general_attributes>
+   <agent_group_attributes>
+      <row>
+         <platform>WINDOWS</platform>
+         <max_parallel>-1</max_parallel>
+         <mode>A</mode>
+      </row>
+   </agent_group_attributes>
+</hostg>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <deactivation_condition>ANY_OK</deactivation_condition>
+         <platform>WINDOWS</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>PCK.AUTOMIC_AMAZON.PRV.JOB.ASSOCIATE_ADDRESS@WINDOWS</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>CLIENT_QUEUE</queue>
+         <versioning_id>-2112447427</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.POWERSHELL_UTILITY
+:INCLUDE PCK.ITPA_SHARED.PUB.INCLUDE.ATTACH
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_ENVIRONMENT@WINDOWS
+
+:INCLUDE PCK.AUTOMIC_AMAZON.PRV.INCLUDE.CHECK_COMMON_OPTIONS
+
+:SET &UC4RB_INSTANCE_OPTION# = ""
+:SET &UC4RB_ADDRESS_OPTION# = ""
+
+:IF &UC4RB_INSTANCE_ID# = ""
+:  IF &UC4RB_AWS_NI_ID# = ""
+:    PRINT "Invalid input paramters. Either instance ID or network interface ID must be set"
+:    EXIT 1
+:  ELSE
+:    SET &UC4RB_INSTANCE_OPTION# = "-n &UC4RB_AWS_NI_ID#"
+:  ENDIF
+:ELSE
+:  IF &UC4RB_AWS_NI_ID# <> ""
+:    PRINT "Invalid input paramters. Only one of instance ID or network interface ID is set, not both"
+:    EXIT 1
+:  ENDIF
+:  SET &UC4RB_INSTANCE_OPTION# = "-i &UC4RB_INSTANCE_ID#"
+:ENDIF
+
+:IF &UC4RB_AWS_IP# <> ""
+:  SET &UC4RB_ADDRESS_OPTION# = "&UC4RB_AWS_IP#"
+:ELSE
+:  IF &UC4RB_AWS_ALLOC_ID# = ""
+:    PRINT "Error: Allocation ID is required for VPC"
+:    EXIT 1
+:  ELSE
+:    SET &UC4RB_ADDRESS_OPTION# = "-a &UC4RB_AWS_ALLOC_ID#"
+:  ENDIF
+:ENDIF
+
+:SET &UC4RB_VPC_OPTIONS# = ''
+
+:IF &UC4RB_AWS_PRIV_IP# <> ""
+:  SET &UC4RB_VPC_OPTIONS# = STR_CAT(&UC4RB_VPC_OPTIONS#, '-p &UC4RB_AWS_PRIV_IP# ')
+:ENDIF
+
+:IF &UC4RB_AWS_ALLOW_REASSOC# = "YES"
+:  SET &UC4RB_VPC_OPTIONS# = STR_CAT(&UC4RB_VPC_OPTIONS#, '--allow-reassociation')
+:ENDIF
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHANGE_DIRECTORY_TO_AGENT_BIN
+
+Write-Host "`nAssociating Elastic IP address.."
+
+$output = java -jar "&$AGENT_RESOURCES_CLIENT#/itpa-tool.jar" arb -cmd execute $env:EC2_HOME\bin\ec2-associate-address.cmd &UC4RB_AWS_COMMON_OPTIONS# &UC4RB_INSTANCE_OPTION# &UC4RB_ADDRESS_OPTION# &UC4RB_VPC_OPTIONS#
+
+$result = $output | select-string -pattern ^ADDRESS -caseSensitive
+
+if (![bool]($result)) {
+  $error = [string]::join("`n", $output)
+  Write-Host $error
+  Write-Host "Failed to associate address"
+  exit 1
+}
+
+Write-Host $result
+Write-Host "Successfully associate address`n"
+
+:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.CHECK_POWERSHELL_CMD@WINDOWS]]></process>
+      </row>
+      <row>
+         <pre_process>:INCLUDE PCK.ITPA_SHARED.PRV.INCLUDE.PREPARE_JOB</pre_process>
+      </row>
+      <row>
+         <post_process><![CDATA[:SET &output_entry# = PREP_PROCESS_REPORT(, , "REP", "ADDRESS*")
+:PROCESS &output_entry#
+:  SET &output_line# = GET_PROCESS_LINE(&output_entry#, 1)
+
+!  Extract the delimiter character from this line, usually the tab character
+:  SET &tab# = STR_CUT(&output_line#, 8, 1)
+:  SET &output_line# = SUBSTR(&output_line#, 9)
+!  Replace the tab character with single space to easier to split
+:  SET &output_line# = STR_SUB(&output_line#, &tab#, " ")
+
+:  DEFINE &results#, string, 5
+:  FILL &results#[] = STR_SPLIT(&output_line#, " ")
+:  SET &len# = LENGTH(&results#[])
+
+:  SET &UC4RB_OUT_EL_IP_ADDR# = &results#[1]
+:  SET &UC4RB_OUT_NI# = &results#[2]
+:  PUBLISH &UC4RB_OUT_EL_IP_ADDR#, , "WORKFLOW"
+:  PUBLISH &UC4RB_OUT_NI#, , "WORKFLOW"
+
+:  PRINT 'Elastic IP Address: &UC4RB_OUT_EL_IP_ADDR#'
+:  PRINT 'Instance or network interface: &UC4RB_OUT_NI#'
+
+:  IF &results#[3] <> ""
+:    SET &UC4RB_OUT_ALLOC_ID# = &results#[3]
+:    PUBLISH &UC4RB_OUT_ALLOC_ID#, , "WORKFLOW"
+:    PRINT 'Allocation ID: &UC4RB_OUT_ALLOC_ID#'
+:  ENDIF
+
+:  IF &results#[4] <> ""
+:    SET &UC4RB_OUT_ASSOC_ID# = &results#[4]
+:    PUBLISH &UC4RB_OUT_ASSOC_ID#, , "WORKFLOW"
+:    PRINT 'Association ID: &UC4RB_OUT_ASSOC_ID#'
+:  ENDIF
+
+:  IF &results#[5] <> ""
+:    SET &UC4RB_OUT_PRIV_IP# = &results#[5]
+:    PUBLISH &UC4RB_OUT_PRIV_IP#, , "WORKFLOW"
+:    PRINT 'Private IP Address: &UC4RB_OUT_PRIV_IP#'
+:  ENDIF
+
+:ENDPROCESS
+:CLOSE_PROCESS &output_entry#]]></post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <platform>WINDOWS</platform>
+         <agent><![CDATA[<WIN>]]></agent>
+         <job_report_path>2</job_report_path>
+         <win_work_dir>c:\</win_work_dir>
+         <win_typ>2</win_typ>
+         <win_view>0</win_view>
+         <win_logon_as_batch>0</win_logon_as_batch>
+         <win_show_at_desktop>0</win_show_at_desktop>
+         <win_report_by_script>0</win_report_by_script>
+         <job_object></job_object>
+         <win_cmd></win_cmd>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

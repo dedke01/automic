@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <auto_deactivation>A</auto_deactivation>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <ert>3</ert>
+         <platform>R3</platform>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <max_parallel_action>1</max_parallel_action>
+         <mrt_time>000000</mrt_time>
+         <name>SAP_IMPORT_JOBS</name>
+         <type>JOBS</type>
+         <inherit_output_filter>N</inherit_output_filter>
+         <queue>T01.QUEUE</queue>
+         <time_zone>TZ.CST</time_zone>
+         <versioning_id>1348296392</versioning_id>
+      </row>
+   </general_attributes>
+   <scripts>
+      <row>
+         <process><![CDATA[R3_IMPORT_JOBS JOB_NAME=P01_IMPORT_%JOBNAME%,LOGIN_NAME=LOGIN.SAP,WORKFLOW_NAME=JOBP.%JOBNAME%,LOGINS=,HOST=T01,QUEUE=T01.QUEUE,DEPENDENCY_ELSE_ACTION=BLOCK,LOGIN_FOLDER=/SAP_IMPORTS_FROM_PRODUCTION,JOB_FOLDER=/SAP_IMPORTS_FROM_PRODUCTION,WORKFLOW_FOLDER=/SAP_IMPORTS_FROM_PRODUCTION,OVERRIDE=NO
+R3_GET_JOBS NAME=TECH_FILES_BOM_DOWNLOAD,JOBCOUNT=01002000,USER=SUBJOB,START_DATE=20090621,NO_DATE=X,WITH_PRED=X,PRELIM=X,SCHEDUL=X,READY=X,RUNNING=X,FINISHED=X,ABORTED=X]]></process>
+      </row>
+      <row>
+         <pre_process>:INC JOBI.R3.PRE ,nofound=ignore</pre_process>
+      </row>
+      <row>
+         <post_process>:INC JOBI.R3.POST ,nofound=ignore</post_process>
+      </row>
+   </scripts>
+   <job_attributes>
+      <row>
+         <activation_at_runtime>1</activation_at_runtime>
+         <platform>R3</platform>
+         <agent>T01</agent>
+         <login>LOGIN.SAP</login>
+         <optional_reports>PLOG</optional_reports>
+         <job_report_path>2</job_report_path>
+         <sap_client>01</sap_client>
+         <job_class>C</job_class>
+         <sap_job_delete>0</sap_job_delete>
+         <sap_lang></sap_lang>
+         <job_name>TEST</job_name>
+         <sap_dst_system></sap_dst_system>
+         <sap_startmode>0</sap_startmode>
+         <sap_job_del_not_on_error>0</sap_job_del_not_on_error>
+         <sap_recipient></sap_recipient>
+         <sap_addresstype></sap_addresstype>
+         <sap_express>0</sap_express>
+         <sap_copy>0</sap_copy>
+         <sap_blindcopy>0</sap_blindcopy>
+         <sap_noforward>0</sap_noforward>
+         <sap_noprint>0</sap_noprint>
+         <sap_deliver></sap_deliver>
+         <sap_statusbymail></sap_statusbymail>
+         <sap_job_type>0</sap_job_type>
+         <sap_override_login>1</sap_override_login>
+      </row>
+   </job_attributes>
+   <rollback_definitions>
+      <row>
+      </row>
+   </rollback_definitions>
+</jobs>

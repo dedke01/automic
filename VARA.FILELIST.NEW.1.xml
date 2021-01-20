@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vara>
+   <metadata>
+      <row>
+         <version>12.3.3</version>
+      </row>
+   </metadata>
+   <general_attributes>
+      <row>
+         <minimum_ae_version>11.2</minimum_ae_version>
+         <child_flags>00000000000000000000000000000000</child_flags>
+         <last_runtimes>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</last_runtimes>
+         <name>VARA.FILELIST.NEW.1</name>
+         <type>VARA</type>
+         <sub_type>FILELIST</sub_type>
+         <versioning_id>-1371772812</versioning_id>
+      </row>
+   </general_attributes>
+   <variable_definitions>
+      <row>
+         <column_count>5</column_count>
+         <directory>\\dedke01-dc.esr.com\Working\ldap_extract_2???.csv</directory>
+         <agent>AUTOMIC_HOST</agent>
+         <login>LOGIN.LDAP.10</login>
+         <on_not_found>I</on_not_found>
+         <sort_order>0</sort_order>
+         <type>FILELIST</type>
+         <data_type>C</data_type>
+         <validity_range>FREI</validity_range>
+      </row>
+   </variable_definitions>
+</vara>
